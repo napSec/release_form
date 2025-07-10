@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Release of Liability Form</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    .form-section { margin-bottom: 20px; }
+    #signature-pad { border: 1px solid #ccc; width: 400px; height: 150px; }
+    button { margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Release of Liability Form</h1>
+  <div class="form-section">
+    <p>
+      By signing this form, you agree to release [Your Company] from all liability for any injuries or damages that may occur during your participation in our activities.
+    </p>
+  </div>
+  <form id="releaseForm">
+    <div class="form-section">
+      <label>Name: <input type="text" name="name" required></label>
+    </div>
+    <div class="form-section">
+      <label>Email: <input type="email" name="email" required></label>
+    </div>
+    <div class="form-section">
+      <label>Date: <input type="date" name="date" required></label>
+    </div>
+    <div class="form-section">
+      <label>Signature:</label><br>
+      <canvas id="signature-pad"></canvas><br>
+      <button type="button" onclick="clearSignature()">Clear Signature</button>
+    </div>
+    <button type="submit">Submit</button>
+  </form>
+  <script>
+    // Signature pad logic
+    const canvas = document.getElementById('signature-pad');
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
+
+    canvas.addEventListener('mousedown', e => { drawing = true; ctx.beginPath(); });
+    canvas.addEventListener('mouseup', e => { drawing = false; });
+    canvas.addEventListener('mouseout', e => { drawing = false; });
+    canvas.addEventListener('mousemove', draw);
+
+    canvas.addEventListener('touchstart', e => { drawing = true; ctx.beginPath(); });
+    canvas.addEventListener('touchend', e => { drawing = false; });
+    canvas.addEventListener('touchcancel', e => { drawing = false; });
+    canvas.addEventListener('touchmove', drawTouch);
+
+    function draw(e) {
+      if (!drawing) return;
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#000';
+      ctx.lineTo(e.offsetX, e.offsetY);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(e.offsetX, e.offsetY);
+    }
+
+    function drawTouch(e) {
+      if (!drawing) return;
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const touch = e.touches[0];
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#000';
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+    }
+
+    function clearSignature() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // Form submission
+    document.getElementById('releaseForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      const signature = canvas.toDataURL();
+      formData.append('signature', signature);
+
+      const response = await fetch('/submit', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (response.ok) {
+        alert('Form submitted successfully!');
+        this.reset();
+        clearSignature();
+      } else {
+        alert('Error submitting form.');
+      }
+    });
+  </script>
+</body>
+</html>
